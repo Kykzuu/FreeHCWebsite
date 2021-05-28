@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>50ed6204-f434-44c3-bc67-adb24871df97</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RCONServer" Version="1.0.2" />
+    <PackageReference Include="Stripe.net" Version="39.49.0" />
+  </ItemGroup>
+
+</Project>

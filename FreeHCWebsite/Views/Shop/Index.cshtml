@@ -1,0 +1,75 @@
+﻿@{
+    ViewData["Title"] = "Sklep";
+}
+
+
+
+<div class="container">
+    <h2>Zakup waluty premium</h2>
+
+    <input type="text" name="nickname" id="nickname" class="content-input" placeholder="Nick gracza">
+    <br />
+    <label for="range_weight" id="fbcoinslabel" class="range">Ilość FHCoins: 1000</label>
+    <input type="range" id="fhcoins" name="fhcoins" class="slider" min="1000" max="40000" value="1000" step="250">
+
+    <div class="range" id="checkout">Do zapłaty: 6 zł</div>
+
+    <div class="terms">Przechodząc do płatności informuję, że zapoznałem się z <a href="/regulamin.pdf">regulaminem</a> oraz zgadzam się na uzyskanie dostępu do produktu cyfrowego już teraz.</div>
+    <br />
+    <button type="submit" class="button-blue ripple-button" id="checkout-button">Przelew/Blik</button>
+    <div class="terms" id="error" style="color:red"></div>
+    <br /><br /><br />
+
+</div>
+
+
+
+<script>
+    $(function () {
+        $('.slider').on('input change', function () {
+            var fhcoins = document.getElementById("fhcoins").value;
+            console.log(document.getElementById("fhcoins").value);
+            document.getElementById("fbcoinslabel").innerHTML = "Ilość FHCoins: " + fhcoins;
+
+            document.getElementById("checkout").innerHTML = "Do zapłaty: " + fhcoins * 0.006 + " zł";
+
+            if (fhcoins >= 3000) {
+                document.getElementById("checkout").innerHTML = "Do zapłaty: " + fhcoins * 0.005 + " zł";
+            }
+        });
+
+
+    });
+</script>
+
+
+<script type="text/javascript">
+        // Create an instance of the Stripe object with your publishable API key
+    var stripe = Stripe("pk_live_51HKZoPDivRgf8jpgCUnCBUl9XVzllQgKtHAciUz98XwmRn09QFpdLCpjZ0D8GGXWRANzXA60XQFVHjnnmrzt2yRs00q3NIUBTc");
+        var checkoutButton = document.getElementById("checkout-button");
+        checkoutButton.addEventListener("click", function () {
+            fetch("/RedirectToPayment?fhcoins=" + document.getElementById("fhcoins").value + "&nickname=" + document.getElementById("nickname").value, {
+                method: "POST",
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (session) {
+                    if (session.id == null) {
+                        document.getElementById("error").innerHTML = session.message;
+                    }
+                    return stripe.redirectToCheckout({ sessionId: session.id });
+                })
+                .then(function (result) {
+                    // If redirectToCheckout fails due to a browser or network
+                    // error, you should display the localized error message to your
+                    // customer using error.message.
+                    if (result.error) {
+                        alert(result.error.message);
+                    }
+                })
+                .catch(function (error) {
+                    console.error("Error:", error);
+                });
+        });
+</script>
