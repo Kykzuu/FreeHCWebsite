@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="RCONServer" Version="1.0.2" />
+    <PackageReference Include="CoreRCON" Version="5.0.2" />
     <PackageReference Include="Stripe.net" Version="39.49.0" />
   </ItemGroup>
 

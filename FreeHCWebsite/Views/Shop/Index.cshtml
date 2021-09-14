@@ -2,21 +2,137 @@
     ViewData["Title"] = "Sklep";
 }
 
+<style>
+    *, *::before, *::after {
+        box-sizing: border-box;
+    }
 
+    :root {
+        --select-border: #777;
+        --select-focus: blue;
+        --select-arrow: var(--select-border);
+    }
+
+    select {
+        appearance: none;
+        background-color: transparent;
+        border: none;
+        padding: 0 1em 0 0;
+        margin: 0;
+        width: 100%;
+        font-family: inherit;
+        font-size: inherit;
+        cursor: inherit;
+        line-height: inherit;
+        z-index: 1;
+        outline: none;
+    }
+
+        select::-ms-expand {
+            display: none;
+        }
+
+    .select {
+        display: grid;
+        grid-template-areas: "select";
+        align-items: center;
+        position: relative;
+        min-width: 15ch;
+        max-width: 30ch;
+        border: 1px solid var(--select-border);
+        border-radius: 0.25em;
+        padding: 0.25em 0.5em;
+        font-size: 1.25rem;
+        cursor: pointer;
+        line-height: 1.1;
+        background-color: #fff;
+        background-image: linear-gradient(to top, #f9f9f9, #fff 33%);
+    }
+
+        .select select, .select::after {
+            grid-area: select;
+        }
+
+        .select:not(.select--multiple)::after {
+            content: "";
+            justify-self: end;
+            width: 0.8em;
+            height: 0.5em;
+            background-color: var(--select-arrow);
+            clip-path: polygon(100% 0%, 0 0%, 50% 100%);
+        }
+
+    select:focus + .focus {
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        bottom: -1px;
+        border: 2px solid var(--select-focus);
+        border-radius: inherit;
+    }
+
+    select[multiple] {
+        padding-right: 0;
+        /*
+   * Safari will not reveal an option
+   * unless the select height has room to 
+   * show all of it
+   * Firefox and Chrome allow showing 
+   * a partial option
+   */
+        height: 6rem;
+    }
+
+        select[multiple] option {
+            white-space: normal;
+            outline-color: var(--select-focus);
+            /* 
+   * Experimental - styling of selected options
+   * in the multiselect
+   * Not supported crossbrowser
+   */
+        }
+
+    .select--disabled {
+        cursor: not-allowed;
+        background-color: #eee;
+        background-image: linear-gradient(to top, #ddd, #eee 33%);
+    }
+
+    label {
+        font-size: 1.125rem;
+        font-weight: 500;
+    }
+
+    .select + label {
+        margin-top: 2rem;
+    }
+
+</style>
 
 <div class="container">
-    <h2>Zakup waluty premium</h2>
+    <h2>Zakup usługi premium</h2>
 
     <input type="text" name="nickname" id="nickname" class="content-input" placeholder="Nick gracza">
     <br />
-    <label for="range_weight" id="fbcoinslabel" class="range">Ilość FHCoins: 1000</label>
-    <input type="range" id="fhcoins" name="fhcoins" class="slider" min="1000" max="40000" value="1000" step="250">
 
-    <div class="range" id="checkout">Do zapłaty: 6 zł</div>
+    <div class="select" style="margin-left: 25px;">
+        <select id="items">
+            <option value="">--Wybierz produkt--</option>
+            <option value="vip">VIP (cała edycja) - 10 zł</option>
+            <option value="sponsor">SPONSOR (cała edycja) - 25 zł</option>
+            <option value="25premiumkey">25 Kluczy Premium - 12 zł</option>
+            <option value="25ultrakey">25 Kluczy Ultra - 18 zł</option>
+            <option value="50premiumkey">50 Kluczy Premium - 20,40 zł (-15%)</option>
+            <option value="50ultrakey">50 Kluczy Ultra - 30,60 zł (-15%)</option>
+        </select>
+        <span class="focus"></span>
+    </div>
 
     <div class="terms">Przechodząc do płatności informuję, że zapoznałem się z <a href="/regulamin.pdf">regulaminem</a> oraz zgadzam się na uzyskanie dostępu do produktu cyfrowego już teraz.</div>
     <br />
-    <button type="submit" class="button-blue ripple-button" id="checkout-button">Przelew/Blik</button>
+    <button type="submit" class="button-blue ripple-button" id="checkout-button">Płacę Przelew/Blik</button>
     <div class="terms" id="error" style="color:red"></div>
     <br /><br /><br />
 
@@ -24,31 +140,12 @@
 
 
 
-<script>
-    $(function () {
-        $('.slider').on('input change', function () {
-            var fhcoins = document.getElementById("fhcoins").value;
-            console.log(document.getElementById("fhcoins").value);
-            document.getElementById("fbcoinslabel").innerHTML = "Ilość FHCoins: " + fhcoins;
-
-            document.getElementById("checkout").innerHTML = "Do zapłaty: " + fhcoins * 0.006 + " zł";
-
-            if (fhcoins >= 3000) {
-                document.getElementById("checkout").innerHTML = "Do zapłaty: " + fhcoins * 0.005 + " zł";
-            }
-        });
-
-
-    });
-</script>
-
-
 <script type="text/javascript">
         // Create an instance of the Stripe object with your publishable API key
     var stripe = Stripe("pk_live_51HKZoPDivRgf8jpgCUnCBUl9XVzllQgKtHAciUz98XwmRn09QFpdLCpjZ0D8GGXWRANzXA60XQFVHjnnmrzt2yRs00q3NIUBTc");
         var checkoutButton = document.getElementById("checkout-button");
         checkoutButton.addEventListener("click", function () {
-            fetch("/RedirectToPayment?fhcoins=" + document.getElementById("fhcoins").value + "&nickname=" + document.getElementById("nickname").value, {
+            fetch("/RedirectToPayment?item=" + document.getElementById("items").value + "&nickname=" + document.getElementById("nickname").value, {
                 method: "POST",
             })
                 .then(function (response) {
@@ -61,9 +158,6 @@
                     return stripe.redirectToCheckout({ sessionId: session.id });
                 })
                 .then(function (result) {
-                    // If redirectToCheckout fails due to a browser or network
-                    // error, you should display the localized error message to your
-                    // customer using error.message.
                     if (result.error) {
                         alert(result.error.message);
                     }

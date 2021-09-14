@@ -1,4 +1,5 @@
-﻿using FreeHCWebsite.Models;
+﻿using CoreRCON;
+using FreeHCWebsite.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -27,16 +28,7 @@ namespace FreeHCWebsite.Controllers
         public IActionResult Index()
         {
             ViewData["online"] = 0;
-            try
-            {
-                var json = new WebClient().DownloadString("http://127.0.0.1:7284/onlinePlayers");
-                List<string[]> players = JsonConvert.DeserializeObject<List<string[]>>(json);
-                ViewData["online"] = players.Count();
-            }
-            catch
-            {
-                _logger.LogError("FHCoins plugin connection problem");
-            }
+
             return View();
         }
 

@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CoreRCON;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MinecraftServerRCON;
 using Newtonsoft.Json;
 using Stripe;
 using Stripe.Checkout;
@@ -41,41 +41,70 @@ namespace FreeHCWebsite.Controllers
 
         [HttpPost]
         [Route("RedirectToPayment")]
-        public IActionResult RedirectToPayment(int fhcoins, string nickname)
+        public IActionResult RedirectToPayment(string item, string nickname)
         {
 
             //walidacja formularza
-            if (fhcoins == 0 || nickname == null)
+            if (item == null || nickname == null)
             {
                 return Json(new { message = "Musisz wypełnić wszystkie pola!" });
             }
 
-            //sprawdz czy gracz jest na serwerze
-            string playerGuid;
-            try
+            int toPay = 0;
+            List<string> commands = new List<string>();
+            if(item == "vip")
             {
-                var json = new WebClient().DownloadString("http://127.0.0.1:7284/onlinePlayers");
-                List<string[]> players = JsonConvert.DeserializeObject<List<string[]>>(json);
-                if (!players.Any(x => x[1].ToLower() == nickname.ToLower()))
-                {
-                    return Json(new { message = $"{nickname} nie jest obecnie na serwerze!" });
-                }
-                playerGuid = players.Where(x => x[1].ToLower() == nickname.ToLower()).First()[0];
-            }
-            catch
-            {
-                _logger.LogError("FHCoins plugin connection problem");
-                return Json(new { message = "Serwer jest offline" });
+                toPay = 1000; //10 zl
+                commands.Add($"bc &3&lGracz &5&l{nickname} &3&lzakupił &5&lVIPa! &3&lDziękujemy! <3");
+                commands.Add($"bc &3Sklep: &5https://shinimc.pl/sklep");
+                commands.Add($"lp user {nickname} parent add vip");
             }
 
-            //oblicz kwote do zaplaty
-            double amount = fhcoins * 0.006;
-            if (fhcoins >= 3000)
+            if (item == "sponsor")
             {
-                amount = fhcoins * 0.005;
+                toPay = 2500; //25 zl
+                commands.Add($"bc &3&lGracz &5&l{nickname} &3&lzakupił &5&lSPONSORA! &3&lDziękujemy! <3");
+                commands.Add($"bc &3Sklep: &5https://shinimc.pl/sklep");
+                commands.Add($"lp user {nickname} parent add sponsor");
             }
+
+            if (item == "25premiumkey")
+            {
+                toPay = 1200; //12 zl
+                commands.Add($"bc &3&lGracz &5&l{nickname} &3&lzakupił &5&l25 PremiumKey! &3&lDziękujemy! <3");
+                commands.Add($"bc &3Sklep: &5https://shinimc.pl/sklep");
+                commands.Add($"goldencrates givekey {nickname} premiumkey 25");
+            }
+
+            if (item == "25ultrakey")
+            {
+                toPay = 1800; //18 zl
+                commands.Add($"bc &3&lGracz &5&l{nickname} &3&lzakupił &5&l25 UltraKey! &3&lDziękujemy! <3");
+                commands.Add($"bc &3Sklep: &5https://shinimc.pl/sklep");
+                commands.Add($"goldencrates givekey {nickname} ultrakey 25");
+            }
+
+            if (item == "50premiumkey")
+            {
+                toPay = 2040; //20,4 zl
+                commands.Add($"bc &3&lGracz &5&l{nickname} &3&lzakupił &5&l50 PremiumKey! &3&lDziękujemy! <3");
+                commands.Add($"bc &3Sklep: &5https://shinimc.pl/sklep");
+                commands.Add($"goldencrates givekey {nickname} premiumkey 50");
+            }
+
+            if (item == "50ultrakey")
+            {
+                toPay = 3060; //30,60 zl
+                commands.Add($"bc &3&lGracz &5&l{nickname} &3&lzakupił &5&l50 UltraKey! &3&lDziękujemy! <3");
+                commands.Add($"bc &3Sklep: &5https://shinimc.pl/sklep");
+                commands.Add($"goldencrates givekey {nickname} ultrakey 50");
+            }
+
+            string jsonCommands = JsonConvert.SerializeObject(commands, Formatting.Indented);
+
             //platnosc przelewem
-
+            //test: sk_test_51HKZoPDivRgf8jpg8TE7nlDAz1omrIeI1iIFyWRSNd37f3YwLcrnl5CAmXvib62bYpA7AGEuv2WtKgYZeatE35tb00acr2oj9n
+            //live: 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
             StripeConfiguration.ApiKey = "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";
             var options = new SessionCreateOptions
             {
@@ -89,11 +118,11 @@ namespace FreeHCWebsite.Controllers
                     {
                         PriceData = new SessionLineItemPriceDataOptions
                         {
-                            UnitAmount = Convert.ToInt64(amount*100),
+                            UnitAmount = toPay, //do zaplaty
                             Currency = "pln",
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
-                                Name = "Punkty premium na serwerze FreeHC.pl",
+                                Name = "Przedmioty i rangi premium na serwerze ShiniMC.pl",
                             },
                         },
                         Quantity = 1,
@@ -106,16 +135,13 @@ namespace FreeHCWebsite.Controllers
                         "nickname", nickname
                     },
                     {
-                        "playerUUID", playerGuid
-                    },
-                    {
-                        "fhcoins", fhcoins.ToString()
+                        "commands", jsonCommands
                     }
                 },
                 Locale = "pl",
                 Mode = "payment",
-                SuccessUrl = "https://freehc.pl/success",
-                CancelUrl = "https://freehc.pl/"
+                SuccessUrl = "https://shinimc.pl/success",
+                CancelUrl = "https://shinimc.pl/"
             };
 
             var service = new SessionService();
@@ -134,7 +160,7 @@ namespace FreeHCWebsite.Controllers
                 var stripeEvent = EventUtility.ConstructEvent(
                   json,
                   Request.Headers["Stripe-Signature"],
-                  secret: "whsec_OawSdjDwG3siYZ7Rhw0Uv9zxHSAzhepn",
+                  secret: "whsec_OawSdjDwG3siYZ7Rhw0Uv9zxHSAzhepn", //whsec_OawSdjDwG3siYZ7Rhw0Uv9zxHSAzhepn
                   throwOnApiVersionMismatch: false
                 );
                 if (stripeEvent.Type == Events.CheckoutSessionCompleted)
@@ -142,10 +168,17 @@ namespace FreeHCWebsite.Controllers
                     Stripe.Checkout.Session checkoutSession = stripeEvent.Data.Object as Stripe.Checkout.Session;
                     if(checkoutSession.PaymentStatus == "paid")
                     {
-                        string playerUUID = checkoutSession.Metadata["playerUUID"];
-                        string fhcoins = checkoutSession.Metadata["fhcoins"];
-                        new WebClient().DownloadString("http://127.0.0.1:7284/AddFhCoinsToPlayer?playerUUID="+playerUUID+"&fhcoins="+fhcoins);
-                        Console.WriteLine($"Payment was successful for {checkoutSession.Metadata["playerUUID"]} ({checkoutSession.Metadata["nickname"]}) - {fhcoins}");
+                        //ZAPLACONO
+                        var rcon = new RCON(IPAddress.Parse("152.70.57.201"), 25575, "M5YwhJBbn3EVG24r5qKg");
+                        rcon.ConnectAsync().Wait();
+
+                        string jsonCommands = checkoutSession.Metadata["commands"];
+                        List<string> commands = JsonConvert.DeserializeObject<List<string>>(jsonCommands);
+                        foreach(string cmd in commands)
+                        {
+                            Console.WriteLine(cmd);
+                            rcon.SendCommandAsync(cmd).Wait();
+                        }
                     }
                 }
 

@@ -37,7 +37,7 @@ body {
 
 .background {
     position: absolute;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5)), url('https://i.imgur.com/XGfISPs.jpg') no-repeat center center / cover;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5)), url('https://i.pinimg.com/originals/dc/24/88/dc2488779fc1c8e5ded0cc6c63f082ee.png') no-repeat center center / cover;
     width: 120%;
     height: 120%;
     z-index: -1;
@@ -254,4 +254,11 @@ input {
     font-weight: lighter;
     -webkit-transition: .5s;
     transition: .5s;
+}
+
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding: 5px;
 }
